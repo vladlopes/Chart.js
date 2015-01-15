@@ -176,8 +176,10 @@
 			onAnimationProgress: function(){},
 
 			// Function - Will fire on animation completion.
-			onAnimationComplete: function(){}
+			onAnimationComplete: function(){},
 
+			// Show X Labels
+			showXLabels: false,
 		}
 	};
 
@@ -300,7 +302,7 @@
 			//Method for warning of errors
 			if (window.console && typeof window.console.warn == "function") console.warn(str);
 		},
-		amd = helpers.amd = (typeof define == 'function' && define.amd),
+		amd = helpers.amd = (typeof root.define == 'function' && root.define.amd),
 		//-- Math methods
 		isNumber = helpers.isNumber = function(n){
 			return !isNaN(parseFloat(n)) && isFinite(n);
@@ -1661,60 +1663,51 @@
 
 				},this);
 
-				each(this.xLabels,function(label,index){
-					var xPos = this.calculateX(index) + aliasPixel(this.lineWidth),
-						// Check to see if line/bar here and decide where to place the line
-						linePos = this.calculateX(index - (this.offsetGridLines ? 0.5 : 0)) + aliasPixel(this.lineWidth),
-						isRotated = (this.xLabelRotation > 0),
-						drawVerticalLine = this.showVerticalLines;
+				if (this.showXLabels) {
+					each(this.xLabels,function(label,index){
+						var xPos = this.calculateX(isNaN(label) ? index : label) + aliasPixel(this.lineWidth),
+							// Check to see if line/bar here and decide where to place the line
+							linePos = this.calculateX((isNaN(label) ? index : label) - (this.offsetGridLines ? 0.5 : 0)) + aliasPixel(this.lineWidth),
+							isRotated = (this.xLabelRotation > 0);
 
-					// This is Y axis, so draw it
-					if (index === 0 && !drawVerticalLine){
-						drawVerticalLine = true;
-					}
-
-					if (drawVerticalLine){
 						ctx.beginPath();
-					}
 
-					if (index > 0){
-						// This is a grid line in the centre, so drop that
-						ctx.lineWidth = this.gridLineWidth;
-						ctx.strokeStyle = this.gridLineColor;
-					} else {
-						// This is the first line on the scale
-						ctx.lineWidth = this.lineWidth;
-						ctx.strokeStyle = this.lineColor;
-					}
-
-					if (drawVerticalLine){
+						if (index > 0){
+							// This is a grid line in the centre, so drop that
+							ctx.lineWidth = this.gridLineWidth;
+							ctx.strokeStyle = this.gridLineColor;
+						} else {
+							// This is the first line on the scale
+							ctx.lineWidth = this.lineWidth;
+							ctx.strokeStyle = this.lineColor;
+						}
 						ctx.moveTo(linePos,this.endPoint);
 						ctx.lineTo(linePos,this.startPoint - 3);
 						ctx.stroke();
 						ctx.closePath();
-					}
 
 
-					ctx.lineWidth = this.lineWidth;
-					ctx.strokeStyle = this.lineColor;
+						ctx.lineWidth = this.lineWidth;
+						ctx.strokeStyle = this.lineColor;
 
 
-					// Small lines at the bottom of the base grid line
-					ctx.beginPath();
-					ctx.moveTo(linePos,this.endPoint);
-					ctx.lineTo(linePos,this.endPoint + 5);
-					ctx.stroke();
-					ctx.closePath();
+						// Small lines at the bottom of the base grid line
+						ctx.beginPath();
+						ctx.moveTo(linePos,this.endPoint);
+						ctx.lineTo(linePos,this.endPoint + 5);
+						ctx.stroke();
+						ctx.closePath();
 
-					ctx.save();
-					ctx.translate(xPos,(isRotated) ? this.endPoint + 12 : this.endPoint + 8);
-					ctx.rotate(toRadians(this.xLabelRotation)*-1);
-					ctx.font = this.font;
-					ctx.textAlign = (isRotated) ? "right" : "center";
-					ctx.textBaseline = (isRotated) ? "middle" : "top";
-					ctx.fillText(label, 0, 0);
-					ctx.restore();
-				},this);
+						ctx.save();
+						ctx.translate(xPos,(isRotated) ? this.endPoint + 12 : this.endPoint + 8);
+						ctx.rotate(toRadians(this.xLabelRotation)*-1);
+						ctx.font = this.font;
+						ctx.textAlign = (isRotated) ? "right" : "center";
+						ctx.textBaseline = (isRotated) ? "middle" : "top";
+						ctx.fillText(label, 0, 0);
+						ctx.restore();
+					},this);
+				}
 
 			}
 		}
@@ -2239,7 +2232,8 @@
 				gridLineColor : (this.options.scaleShowGridLines) ? this.options.scaleGridLineColor : "rgba(0,0,0,0)",
 				padding : (this.options.showScale) ? 0 : (this.options.barShowStroke) ? this.options.barStrokeWidth : 0,
 				showLabels : this.options.scaleShowLabels,
-				display : this.options.showScale
+				display : this.options.showScale,
+				showXLabels : this.options.showXLabels,
 			};
 
 			if (this.options.scaleOverride){
@@ -2558,8 +2552,9 @@
 		datasetFill : true,
 
 		//String - A legend template
-		legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+		legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
 
+		showXLabels : true,
 	};
 
 
@@ -2606,6 +2601,7 @@
 					pointColor : dataset.pointColor,
 					pointStrokeColor : dataset.pointStrokeColor,
 					noStroke: dataset.noStroke,
+					xData: dataset.xData,
 					points : []
 				};
 
@@ -2616,7 +2612,7 @@
 					//Add a new point for each piece of data, passing any required data to draw.
 					datasetObject.points.push(new this.PointClass({
 						value : dataPoint,
-						label : data.labels[index],
+						label : data.labels ? data.labels[index] : dataset.xData[index],
 						datasetLabel: dataset.label,
 						strokeColor : dataset.pointStrokeColor,
 						fillColor : dataset.pointColor,
@@ -2624,19 +2620,35 @@
 						highlightStroke : dataset.pointHighlightStroke || dataset.pointStrokeColor
 					}));
 				},this);
+			},this);
 
-				this.buildScale(data.labels);
+			var ls = undefined;
+			if (!data.labels) {
+				var maxlabel = 0;
+				helpers.each(data.datasets,function(dataset){
+					maxlabel = Math.max(maxlabel, Math.max.apply(Math, dataset.xData));
+				}, this);
 
+				if (maxlabel) {
+					var ls = new Array(Math.ceil(maxlabel) + 1);
+					for (var i = 0; i <= Math.ceil(maxlabel); i++)
+						ls[i] = i;
+				}
+			}
+			else
+				ls = data.labels;
+			helpers.each(data.datasets,function(dataset){
+				this.buildScale(ls);
 
 				this.eachPoints(function(point, index){
 					helpers.extend(point, {
-						x: this.scale.calculateX(index),
+						x: this.scale.calculateX(data.labels ? index : dataset.xData[index]),
 						y: this.scale.endPoint
 					});
 					point.save();
 				}, this);
 
-			},this);
+			}, this);
 
 
 			this.render();
@@ -2711,7 +2723,8 @@
 				gridLineColor : (this.options.scaleShowGridLines) ? this.options.scaleGridLineColor : "rgba(0,0,0,0)",
 				padding: (this.options.showScale) ? 0 : this.options.pointDotRadius + this.options.pointDotStrokeWidth,
 				showLabels : this.options.scaleShowLabels,
-				display : this.options.showScale
+				display : this.options.showScale,
+				showXLabels : this.options.showXLabels,
 			};
 
 			if (this.options.scaleOverride){
@@ -2791,7 +2804,7 @@
 					if (point.hasValue()){
 						point.transition({
 							y : this.scale.calculateY(point.value),
-							x : this.scale.calculateX(index)
+							x : this.scale.calculateX(dataset.xData ? dataset.xData[index] : index)
 						}, easingDecimal);
 					}
 				},this);
