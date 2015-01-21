@@ -377,9 +377,6 @@
 				}
 			};
 		},
-		calculateOrderOfMagnitude = helpers.calculateOrderOfMagnitude = function(val){
-			return Math.floor(Math.log(val) / Math.LN10);
-		},
 		calculateScaleRange = helpers.calculateScaleRange = function(valuesArray, drawingSize, textSize, startFromZero, integersOnly){
 
 			//Set a minimum step of two - a point at the top of the graph, and a point at the base
@@ -404,46 +401,26 @@
 				}
 			}
 
-			var	valueRange = Math.abs(maxValue - minValue),
-				rangeOrderOfMagnitude = calculateOrderOfMagnitude(valueRange),
-				graphMax = Math.ceil(maxValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude),
-				graphMin = (startFromZero) ? 0 : Math.floor(minValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude),
+			// adapted from https://groups.google.com/forum/#!topic/comp.soft-sys.sas/TqT3M_vk1qE
+			var amin = Math.floor(minValue),
+				amax = Math.ceil(maxValue),
+                unit = (amax - amin) / 10,
+				grade = Math.floor(Math.log(unit)/Math.LN10),
+				sunit = unit / Math.pow(10, grade),
+				m = 0;
+			if (sunit < Math.sqrt(2))
+				m = 1;
+			else if (sunit < Math.sqrt(10))
+				m = 2;
+			else if (sunit < Math.sqrt(50))
+				m = 5;
+			else
+				m = 10;
+			var stepValue = Math.pow(10, grade) * m,
+				graphMin = Math.floor(amin / stepValue) * stepValue,
+				graphMax = Math.ceil(amax / stepValue) * stepValue,
 				graphRange = graphMax - graphMin,
-				stepValue = Math.pow(10, rangeOrderOfMagnitude),
 				numberOfSteps = Math.round(graphRange / stepValue);
-
-			//If we have more space on the graph we'll use it to give more definition to the data
-			while((numberOfSteps > maxSteps || (numberOfSteps * 2) < maxSteps) && !skipFitting) {
-				if(numberOfSteps > maxSteps){
-					stepValue *=2;
-					numberOfSteps = Math.round(graphRange/stepValue);
-					// Don't ever deal with a decimal number of steps - cancel fitting and just use the minimum number of steps.
-					if (numberOfSteps % 1 !== 0){
-						skipFitting = true;
-					}
-				}
-				//We can fit in double the amount of scale points on the scale
-				else{
-					//If user has declared ints only, and the step value isn't a decimal
-					if (integersOnly && rangeOrderOfMagnitude >= 0){
-						//If the user has said integers only, we need to check that making the scale more granular wouldn't make it a float
-						if(stepValue/2 % 1 === 0){
-							stepValue /=2;
-							numberOfSteps = Math.round(graphRange/stepValue);
-						}
-						//If it would make it a float break out of the loop
-						else{
-							break;
-						}
-					}
-					//If the scale doesn't have to be an int, make the scale more granular anyway.
-					else{
-						stepValue /=2;
-						numberOfSteps = Math.round(graphRange/stepValue);
-					}
-
-				}
-			}
 
 			if (skipFitting){
 				numberOfSteps = minSteps;
@@ -2601,7 +2578,7 @@
 					pointColor : dataset.pointColor,
 					pointStrokeColor : dataset.pointStrokeColor,
 					noStroke: dataset.noStroke,
-                    noPoint: dataset.noPoint,
+					noPoint: dataset.noPoint,
 					xData: dataset.xData,
 					points : []
 				};
@@ -2887,11 +2864,11 @@
 				//Now draw the points over the line
 				//A little inefficient double looping, but better than the line
 				//lagging behind the point positions
-                if (!dataset.noPoint) {
-                    helpers.each(pointsWithValues,function(point){
-                        point.draw();
-                    });
-                }
+				if (!dataset.noPoint) {
+					helpers.each(pointsWithValues,function(point){
+						point.draw();
+					});
+				}
 			},this);
 		}
 	});
