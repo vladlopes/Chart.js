@@ -1641,6 +1641,12 @@
 				},this);
 
 				if (this.showXLabels) {
+                    // if showXLabels is a number then divide and determine how many xLabels
+                    // to skip before showing next label else, if showXLabels is true, print
+                    // all labels, else never print
+                    this.xLabelsSkipper = isNumber(this.showXLabels) ?
+                        Math.ceil(this.xLabels.length/this.showXLabels) :
+                        (this.showXLabels === true) ? 1 : this.xLabels.length+1;
 					each(this.xLabels,function(label,index){
 						var xPos = this.calculateX(isNaN(label) ? index : label) + aliasPixel(this.lineWidth),
 							// Check to see if line/bar here and decide where to place the line
@@ -1669,11 +1675,13 @@
 
 
 						// Small lines at the bottom of the base grid line
-						ctx.beginPath();
-						ctx.moveTo(linePos,this.endPoint);
-						ctx.lineTo(linePos,this.endPoint + 5);
-						ctx.stroke();
-						ctx.closePath();
+                        if(index % this.xLabelsSkipper === 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(linePos,this.endPoint);
+                            ctx.lineTo(linePos,this.endPoint + 5);
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
 
 						ctx.save();
 						ctx.translate(xPos,(isRotated) ? this.endPoint + 12 : this.endPoint + 8);
@@ -1681,7 +1689,9 @@
 						ctx.font = this.font;
 						ctx.textAlign = (isRotated) ? "right" : "center";
 						ctx.textBaseline = (isRotated) ? "middle" : "top";
-						ctx.fillText(label, 0, 0);
+                        if(index % this.xLabelsSkipper === 0) {
+                            ctx.fillText(label, 0, 0);
+                        }
 						ctx.restore();
 					},this);
 				}
