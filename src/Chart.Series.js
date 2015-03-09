@@ -98,6 +98,7 @@
 					pointColor : dataset.pointColor,
 					pointStrokeColor : dataset.pointStrokeColor,
 					noStroke: dataset.noStroke,
+					noPoint: dataset.noPoint,
 					points : []
 				};
 
@@ -366,9 +367,11 @@
 				//Now draw the points over the line
 				//A little inefficient double looping, but better than the line
 				//lagging behind the point positions
-				helpers.each(pointsWithValues,function(point){
-					point.draw();
-				});
+				if (!dataset.noPoint) {
+					helpers.each(pointsWithValues,function(point){
+						point.draw();
+					});
+				}
 			},this);
 		}
 	});
