@@ -99,6 +99,7 @@
 					pointStrokeColor : dataset.pointStrokeColor,
 					noStroke: dataset.noStroke,
 					noPoint: dataset.noPoint,
+					xData: dataset.xData,
 					points : []
 				};
 
@@ -109,7 +110,7 @@
 					//Add a new point for each piece of data, passing any required data to draw.
 					datasetObject.points.push(new this.PointClass({
 						value : dataPoint,
-						label : data.labels[index],
+						xValue : dataset.xData[index] - dataset.xData[0],
 						datasetLabel: dataset.label,
 						strokeColor : dataset.pointStrokeColor,
 						fillColor : dataset.pointColor,
@@ -118,12 +119,19 @@
 					}));
 				},this);
 
-				this.buildScale(data.labels);
+				var maxX = 0;
+				helpers.each(data.datasets, function(dataset) {
+					maxX = Math.max(maxX, Math.max.apply(Math, dataset.xData));
+					if (maxX)
+						maxX -= dataset.xData[0] - 1;
+				}, this);
 
+
+				this.buildScale(data.labels, maxX);
 
 				this.eachPoints(function(point, index){
 					helpers.extend(point, {
-						x: this.scale.calculateX(index),
+						x: this.scale.calculateX(point.xValue),
 						y: this.scale.endPoint
 					});
 					point.save();
@@ -160,7 +168,7 @@
 			},this);
 			return pointsArray;
 		},
-		buildScale : function(labels){
+		buildScale : function(labels,maxX){
 			var self = this;
 
 			var dataTotal = function(){
@@ -181,7 +189,7 @@
 				fontSize : this.options.scaleFontSize,
 				fontStyle : this.options.scaleFontStyle,
 				fontFamily : this.options.scaleFontFamily,
-				valuesCount : labels.length,
+				valuesCount : maxX,
 				beginAtZero : this.options.scaleBeginAtZero,
 				integersOnly : this.options.scaleIntegersOnly,
 				calculateYRange : function(currentHeight){
@@ -220,33 +228,6 @@
 
 			this.scale = new Chart.Scale(scaleOptions);
 		},
-		addData : function(valuesArray,label){
-			//Map the values array for each of the datasets
-
-			helpers.each(valuesArray,function(value,datasetIndex){
-				//Add a new point for each piece of data, passing any required data to draw.
-				this.datasets[datasetIndex].points.push(new this.PointClass({
-					value : value,
-					label : label,
-					x: this.scale.calculateX(this.scale.valuesCount+1),
-					y: this.scale.endPoint,
-					strokeColor : this.datasets[datasetIndex].pointStrokeColor,
-					fillColor : this.datasets[datasetIndex].pointColor
-				}));
-			},this);
-
-			this.scale.addXLabel(label);
-			//Then re-render the chart.
-			this.update();
-		},
-		removeData : function(){
-			this.scale.removeXLabel();
-			//Then re-render the chart.
-			helpers.each(this.datasets,function(dataset){
-				dataset.points.shift();
-			},this);
-			this.update();
-		},
 		reflow : function(){
 			var newScaleProps = helpers.extend({
 				height : this.chart.height,
@@ -284,7 +265,7 @@
 					if (point.hasValue()){
 						point.transition({
 							y : this.scale.calculateY(point.value),
-							x : this.scale.calculateX(index)
+							x : this.scale.calculateX(point.xValue)
 						}, easingDecimal);
 					}
 				},this);

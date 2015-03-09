@@ -1469,14 +1469,18 @@
 			this.yLabelWidth = (this.display && this.showLabels) ? longestText(this.ctx,this.font,this.yLabels) : 0;
 		},
 		addXLabel : function(label){
-			this.xLabels.push(label);
-			this.valuesCount++;
-			this.fit();
+			if (this.xLabels){
+				this.xLabels.push(label);
+				this.valuesCount++;
+				this.fit();
+			}
 		},
 		removeXLabel : function(){
-			this.xLabels.shift();
-			this.valuesCount--;
-			this.fit();
+			if (this.xLabels){
+				this.xLabels.shift();
+				this.valuesCount--;
+				this.fit();
+			}
 		},
 		// Fitting loop to rotate x Labels and figure out what fits there, and also calculate how many Y steps to use
 		fit: function(){
@@ -1527,13 +1531,14 @@
 
 		},
 		calculateXLabelRotation : function(){
+			var xlabelsaux = this.xLabels || ['-'];
 			//Get the width of each grid by calculating the difference
 			//between x offsets between 0 and 1.
 
 			this.ctx.font = this.font;
 
-			var firstWidth = this.ctx.measureText(this.xLabels[0]).width,
-				lastWidth = this.ctx.measureText(this.xLabels[this.xLabels.length - 1]).width,
+			var firstWidth = this.ctx.measureText(xlabelsaux[0]).width,
+				lastWidth = this.ctx.measureText(xlabelsaux[xlabelsaux.length - 1]).width,
 				firstRotated,
 				lastRotated;
 
@@ -1543,9 +1548,9 @@
 
 			this.xLabelRotation = 0;
 			if (this.display){
-				var originalLabelWidth = longestText(this.ctx,this.font,this.xLabels),
+				var originalLabelWidth = longestText(this.ctx,this.font,xlabelsaux),
 					cosRotation,
-					firstRotatedWidth;
+						firstRotatedWidth;
 				this.xLabelWidth = originalLabelWidth;
 				//Allow 3 pixels x2 padding either side for label readability
 				var xGridWidth = Math.floor(this.calculateX(1) - this.calculateX(0)) - 6;
@@ -1589,11 +1594,12 @@
 			var scalingFactor = this.drawingArea() / (this.min - this.max);
 			return this.endPoint - (scalingFactor * (value - this.min));
 		},
-		calculateX : function(index){
+		calculateX : function(index, maxX){
+			var rightMax = maxX || this.valuesCount;
 			var isRotated = (this.xLabelRotation > 0),
 				// innerWidth = (this.offsetGridLines) ? this.width - offsetLeft - this.padding : this.width - (offsetLeft + halfLabelWidth * 2) - this.padding,
 				innerWidth = this.width - (this.xScalePaddingLeft + this.xScalePaddingRight),
-				valueWidth = innerWidth/Math.max((this.valuesCount - ((this.offsetGridLines) ? 0 : 1)), 1),
+				valueWidth = innerWidth/Math.max((rightMax - ((this.offsetGridLines) ? 0 : 1)), 1),
 				valueOffset = (valueWidth * index) + this.xScalePaddingLeft;
 
 			if (this.offsetGridLines){
@@ -1662,61 +1668,62 @@
 
 				},this);
 
-				each(this.xLabels,function(label,index){
-					var xPos = this.calculateX(index) + aliasPixel(this.lineWidth),
-						// Check to see if line/bar here and decide where to place the line
-						linePos = this.calculateX(index - (this.offsetGridLines ? 0.5 : 0)) + aliasPixel(this.lineWidth),
-						isRotated = (this.xLabelRotation > 0),
-						drawVerticalLine = this.showVerticalLines;
+				if (this.xLabels){
+					each(this.xLabels,function(label,index){
+						var xPos = this.calculateX(index, this.xLabels.length) + aliasPixel(this.lineWidth),
+							// Check to see if line/bar here and decide where to place the line
+							linePos = this.calculateX(index - (this.offsetGridLines ? 0.5 : 0), this.xLabels.length) + aliasPixel(this.lineWidth),
+							isRotated = (this.xLabelRotation > 0),
+							drawVerticalLine = this.showVerticalLines;
 
-					// This is Y axis, so draw it
-					if (index === 0 && !drawVerticalLine){
-						drawVerticalLine = true;
-					}
+						// This is Y axis, so draw it
+						if (index === 0 && !drawVerticalLine){
+							drawVerticalLine = true;
+						}
 
-					if (drawVerticalLine){
-						ctx.beginPath();
-					}
+						if (drawVerticalLine){
+							ctx.beginPath();
+						}
 
-					if (index > 0){
-						// This is a grid line in the centre, so drop that
-						ctx.lineWidth = this.gridLineWidth;
+						if (index > 0){
+							// This is a grid line in the centre, so drop that
+							ctx.lineWidth = this.gridLineWidth;
 						ctx.strokeStyle = this.gridLineColor;
-					} else {
-						// This is the first line on the scale
+						} else {
+							// This is the first line on the scale
+							ctx.lineWidth = this.lineWidth;
+							ctx.strokeStyle = this.lineColor;
+						}
+
+						if (drawVerticalLine){
+							ctx.moveTo(linePos,this.endPoint);
+							ctx.lineTo(linePos,this.startPoint - 3);
+							ctx.stroke();
+							ctx.closePath();
+						}
+
+
 						ctx.lineWidth = this.lineWidth;
 						ctx.strokeStyle = this.lineColor;
-					}
 
-					if (drawVerticalLine){
+
+						// Small lines at the bottom of the base grid line
+						ctx.beginPath();
 						ctx.moveTo(linePos,this.endPoint);
-						ctx.lineTo(linePos,this.startPoint - 3);
+						ctx.lineTo(linePos,this.endPoint + 5);
 						ctx.stroke();
 						ctx.closePath();
-					}
 
-
-					ctx.lineWidth = this.lineWidth;
-					ctx.strokeStyle = this.lineColor;
-
-
-					// Small lines at the bottom of the base grid line
-					ctx.beginPath();
-					ctx.moveTo(linePos,this.endPoint);
-					ctx.lineTo(linePos,this.endPoint + 5);
-					ctx.stroke();
-					ctx.closePath();
-
-					ctx.save();
-					ctx.translate(xPos,(isRotated) ? this.endPoint + 12 : this.endPoint + 8);
-					ctx.rotate(toRadians(this.xLabelRotation)*-1);
-					ctx.font = this.font;
-					ctx.textAlign = (isRotated) ? "right" : "center";
-					ctx.textBaseline = (isRotated) ? "middle" : "top";
-					ctx.fillText(label, 0, 0);
-					ctx.restore();
-				},this);
-
+						ctx.save();
+						ctx.translate(xPos,(isRotated) ? this.endPoint + 12 : this.endPoint + 8);
+						ctx.rotate(toRadians(this.xLabelRotation)*-1);
+						ctx.font = this.font;
+						ctx.textAlign = (isRotated) ? "right" : "center";
+						ctx.textBaseline = (isRotated) ? "middle" : "top";
+						ctx.fillText(label, 0, 0);
+						ctx.restore();
+					},this);
+				}
 			}
 		}
 
