@@ -1527,7 +1527,7 @@
 			if (this.display){
 				var originalLabelWidth = longestText(this.ctx,this.font,xlabelsaux),
 					cosRotation,
-						firstRotatedWidth;
+					firstRotatedWidth;
 				this.xLabelWidth = originalLabelWidth;
 				//Allow 3 pixels x2 padding either side for label readability
 				var xGridWidth = Math.floor(this.calculateX(1) - this.calculateX(0)) - 6;
