@@ -105,12 +105,16 @@
 
 				this.datasets.push(datasetObject);
 
+				var minX = Number.MAX_VALUE;
+				helpers.each(data.datasets, function(dataset) {
+					minX = Math.min(minX, Math.min.apply(Math, dataset.xData));
+				}, this);
 
 				helpers.each(dataset.data,function(dataPoint,index){
 					//Add a new point for each piece of data, passing any required data to draw.
 					datasetObject.points.push(new this.PointClass({
 						value : dataPoint,
-						xValue : dataset.xData[index] - dataset.xData[0],
+						xValue : dataset.xData[index] - minX,
 						datasetLabel: dataset.label,
 						strokeColor : dataset.pointStrokeColor,
 						fillColor : dataset.pointColor,
@@ -119,13 +123,12 @@
 					}));
 				},this);
 
-				var maxX = 0;
+				var maxX = Number.MIN_VALUE;
 				helpers.each(data.datasets, function(dataset) {
 					maxX = Math.max(maxX, Math.max.apply(Math, dataset.xData));
 					if (maxX)
-						maxX -= dataset.xData[0] - 1;
+						maxX -= minX - 1;
 				}, this);
-
 
 				this.buildScale(data.labels, maxX);
 
