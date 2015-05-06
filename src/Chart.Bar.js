@@ -48,6 +48,9 @@
 		defaults : defaultConfig,
 		initialize:  function(data){
 
+			// Save data as a source for updating of values & methods
+			this.data = data;
+
 			//Expose options as a scope variable here so we can access it in the ScaleClass
 			var options = this.options;
 
@@ -140,6 +143,29 @@
 			this.render();
 		},
 		update : function(){
+			//Iterate through each of the datasets, and build this into a property of the chart
+			helpers.each(this.data.datasets,function(dataset,datasetIndex){
+
+				helpers.extend(this.datasets[datasetIndex], {
+					label : dataset.label || null,
+					fillColor : dataset.fillColor,
+					strokeColor : dataset.strokeColor,
+				});
+
+				helpers.each(dataset.data,function(dataPoint,index){
+					helpers.extend(this.datasets[datasetIndex].bars[index], {
+						value : dataPoint,
+						label : this.data.labels[index],
+						datasetLabel: dataset.label,
+						strokeColor : dataset.strokeColor,
+						fillColor : dataset.fillColor,
+						highlightFill : dataset.highlightFill || dataset.fillColor,
+						highlightStroke : dataset.highlightStroke || dataset.strokeColor
+					});
+				},this);
+
+			},this);
+
 			this.scale.update();
 			// Reset any highlight colours before updating.
 			helpers.each(this.activeElements, function(activeElement){
@@ -240,6 +266,7 @@
 				this.datasets[datasetIndex].bars.push(new this.BarClass({
 					value : value,
 					label : label,
+					datasetLabel: this.datasets[datasetIndex].label,
 					x: this.scale.calculateBarX(this.datasets.length, datasetIndex, this.scale.valuesCount+1),
 					y: this.scale.endPoint,
 					width : this.scale.calculateBarWidth(this.datasets.length),

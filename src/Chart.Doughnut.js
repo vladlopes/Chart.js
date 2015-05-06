@@ -36,7 +36,6 @@
 
 	};
 
-
 	Chart.Type.extend({
 		//Passing in a name registers this chart in the Chart namespace
 		name: "Doughnut",
@@ -45,6 +44,9 @@
 		//Initialize is fired when the chart is initialized - Data is passed in as a parameter
 		//Config is automatically merged by the core of Chart.js, and is available at this.options
 		initialize:  function(data){
+
+			// Save data as a source for updating of values & methods
+			this.data = data;
 
 			//Declare segments as a static property to prevent inheriting across the Chart type prototype
 			this.segments = [];
@@ -73,6 +75,9 @@
 			this.calculateTotal(data);
 
 			helpers.each(data,function(datapoint, index){
+				if (!datapoint.color) {
+					datapoint.color = 'hsl(' + (360 * index / data.length) + ', 100%, 50%)';
+				}
 				this.addData(datapoint, index, true);
 			},this);
 
@@ -108,8 +113,12 @@
 				this.update();
 			}
 		},
-		calculateCircumference : function(value){
-			return (Math.PI*2)*(Math.abs(value) / this.total);
+		calculateCircumference : function(value) {
+			if ( this.total > 0 ) {
+				return (Math.PI*2)*(value / this.total);
+			} else {
+				return 0;
+			}
 		},
 		calculateTotal : function(data){
 			this.total = 0;
@@ -118,6 +127,25 @@
 			},this);
 		},
 		update : function(){
+
+			// Map new data to data points
+			if(this.data.length == this.segments.length){
+				helpers.each(this.data, function(segment, i){
+					helpers.extend(this.segments[i], {
+						value : segment.value,
+						fillColor : segment.color,
+						highlightColor : segment.highlight || segment.color,
+						showStroke : this.options.segmentShowStroke,
+						strokeWidth : this.options.segmentStrokeWidth,
+						strokeColor : this.options.segmentStrokeColor,
+						label : segment.label
+					});
+				}, this);
+			} else{
+				// Data size changed without properly inserting, just redraw the chart
+				this.initialize(this.data);
+			}
+
 			this.calculateTotal(this.segments);
 
 			// Reset any highlight colours before updating.
