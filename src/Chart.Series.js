@@ -73,8 +73,8 @@
 				display: this.options.pointDot,
 				hitDetectionRadius : this.options.pointHitDetectionRadius,
 				ctx : this.chart.ctx,
-				inRange : function(mouseX){
-					return (Math.pow(mouseX-this.x, 2) < Math.pow(this.radius + this.hitDetectionRadius,2));
+				inRange : function(mouseX,mouseY){
+					return (Math.pow(mouseX-this.x, 2)+Math.pow(mouseY-this.y, 2) < Math.pow(this.radius + this.hitDetectionRadius,2));
 				}
 			});
 
