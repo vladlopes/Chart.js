@@ -133,7 +133,7 @@
 				var maxX = Number.MIN_VALUE;
 				helpers.each(data.datasets, function(dataset) {
 					maxX = Math.max(maxX, Math.max.apply(Math, dataset.xData));
-					if (maxX)
+					if (maxX && minX)
 						maxX -= minX - 1;
 				}, this);
 
