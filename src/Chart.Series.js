@@ -106,6 +106,7 @@
 					pointStrokeColor : dataset.pointStrokeColor,
 					noStroke: dataset.noStroke,
 					noPoint: dataset.noPoint,
+					strokeWidth: dataset.strokeWidth,
 					xData: dataset.xData,
 					points : []
 				};
@@ -317,7 +318,7 @@
 
 				if (this.options.datasetStroke && !dataset.noStroke) {
 					//Draw the line between all the points
-					ctx.lineWidth = this.options.datasetStrokeWidth;
+					ctx.lineWidth = dataset.strokeWidth || this.options.datasetStrokeWidth;
 					ctx.strokeStyle = dataset.strokeColor;
 					ctx.beginPath();
 
