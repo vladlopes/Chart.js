@@ -107,6 +107,7 @@
 					noStroke: dataset.noStroke,
 					noPoint: dataset.noPoint,
 					strokeWidth: dataset.strokeWidth,
+					strokeDashedArray: dataset.strokeDashedArray,
 					xData: dataset.xData,
 					points : []
 				};
@@ -320,6 +321,11 @@
 					//Draw the line between all the points
 					ctx.lineWidth = dataset.strokeWidth || this.options.datasetStrokeWidth;
 					ctx.strokeStyle = dataset.strokeColor;
+					if (dataset.strokeDashedArray)
+						ctx.setLineDash(dataset.strokeDashedArray);
+					else
+						ctx.setLineDash([]);
+
 					ctx.beginPath();
 
 					helpers.each(pointsWithValues, function(point, index){
