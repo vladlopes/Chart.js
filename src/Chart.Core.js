@@ -1035,11 +1035,13 @@
 
 
 								//Include any colour information about the element
-								tooltipLabels.push(helpers.template(this.options.multiTooltipTemplate, element));
-								tooltipColors.push({
-									fill: element._saved.fillColor || element.fillColor,
-									stroke: element._saved.strokeColor || element.strokeColor
-								});
+								if (element.datasetLabel) {
+									tooltipLabels.push(helpers.template(this.options.multiTooltipTemplate, element));
+									tooltipColors.push({
+										fill: element._saved.fillColor || element.fillColor,
+										stroke: element._saved.strokeColor || element.strokeColor
+									});
+								}
 
 							}, this);
 
