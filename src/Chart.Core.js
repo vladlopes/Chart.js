@@ -443,6 +443,10 @@
 				numberOfSteps = minSteps;
 				stepValue = graphRange / numberOfSteps;
 			}
+			else if (numberOfSteps > maxSteps) {
+				numberOfSteps = maxSteps;
+				stepValue = Math.ceil(graphRange / numberOfSteps);
+			}
 
 			return {
 				steps : numberOfSteps,
