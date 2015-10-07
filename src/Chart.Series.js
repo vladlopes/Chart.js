@@ -175,7 +175,7 @@
 				eventPosition = helpers.getRelativePosition(e);
 			helpers.each(this.datasets,function(dataset){
 				helpers.each(dataset.points,function(point){
-					if (point.inRange(eventPosition.x,eventPosition.y)) pointsArray.push(point);
+					if (point.datasetLabel && point.inRange(eventPosition.x,eventPosition.y)) pointsArray.push(point);
 				});
 			},this);
 			return pointsArray;
