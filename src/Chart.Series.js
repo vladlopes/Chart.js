@@ -53,8 +53,13 @@
 		legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></span></li><%}%></ul>",
 
 		//Boolean - Whether to horizontally center the label and point dot inside the grid
-		offsetGridLines : false
+		offsetGridLines : false,
 
+		//Boolean - Enable zoom
+		zoom: false,
+
+		//Number - Zoom factor (The lower the value the higher the zoom, per event. Max = 0.99)
+		zoomfactor: 0.9,
 	};
 
 
@@ -92,6 +97,29 @@
 						activePoint.strokeColor = activePoint.highlightStroke;
 					});
 					this.showTooltip(activePoints);
+				});
+			}
+
+			if (this.options.zoom) {
+				helpers.trackTransforms(this.chart.ctx);
+
+				helpers.bindEvents(this, ['mousemove'], function(evt) {
+					this.currentcursorpos.x = evt.offsetX || (evt.pageX - this.chart.canvas.offsetLeft);
+					this.currentcursorpos.y = evt.offsetY || (evt.pageY - this.chart.canvas.offsetTop);
+				});
+
+				helpers.bindEvents(this, ['mousewheel', 'DOMMouseScroll'], function(evt) {
+					var d = evt.wheelDelta || evt.detail;
+					if (d < 0) this.zoomin();
+					else this.zoomout();
+					return evt.preventDefault() && false;
+				});
+
+				helpers.bindEvents(this, ['mouseup'], function(evt) {
+					if (evt.shiftKey)
+						this.zoomout();
+					else
+						this.zoomin();
 				});
 			}
 
@@ -151,6 +179,12 @@
 
 			},this);
 
+			this.scaleseries = 1;
+			this.zoomfactor = Math.min(0.99, this.options.zoomfactor || 0.9);
+			this.currentcursorpos = {
+				x: 0,
+				y: 0,
+			};
 
 			this.render();
 		},
@@ -253,6 +287,14 @@
 			this.clear();
 
 			var ctx = this.chart.ctx;
+
+			if (this.options.zoom) {
+				ctx.save();
+				var pt = ctx.transformedPoint(this.currentcursorpos.x, this.currentcursorpos.y);
+				ctx.translate(pt.x, pt.y);
+				ctx.scale(this.scaleseries, this.scaleseries);
+				ctx.translate(-pt.x, -pt.y);
+			}
 
 			// Some helper methods for getting the next/prev points
 			var hasValue = function(item){
@@ -372,7 +414,21 @@
 					});
 				}
 			},this);
-		}
+
+			if (this.options.zoom)
+				ctx.restore();
+		},
+		zoomin: function() {
+			this.scaleseries /= this.zoomfactor;
+			this.render(true);
+		},
+		zoomout: function() {
+			var last = this.scaleseries;
+			this.scaleseries *= this.zoomfactor;
+			this.scaleseries = Math.max(1, this.scaleseries);
+			if (last !== this.scaleseries)
+				this.render(true);
+		},
 	});
 
 
