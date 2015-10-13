@@ -109,8 +109,8 @@
 				});
 
 				helpers.bindEvents(this, ['mousewheel', 'DOMMouseScroll'], function(evt) {
-					var d = evt.wheelDelta || evt.detail;
-					if (d < 0) this.zoomin();
+					var d = evt.wheelDelta || -evt.detail;
+					if (d > 0) this.zoomin();
 					else this.zoomout();
 					return evt.preventDefault() && false;
 				});
